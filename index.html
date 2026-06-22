@@ -1,41 +1,182 @@
+<!DOCTYPE html>
+<html lang="it">
 <head>
+
 <meta charset="UTF-8">
 
-<title>DOCX to TCPDF Template Generator | Convert Word to PHP PDF Templates</title>
+<title>Word DOCX → TCPDF Converter | Generatore Template PHP PDF</title>
 
-<meta name="description" content="Converti file DOCX in template PHP pronti per TCPDF. Genera header, footer e body da Word a PDF PHP in modo automatico e gratuito.">
-<meta name="keywords" content="docx to tcpdf, word to pdf php, tcpdf template generator, docx converter php, word to html tcpdf">
+<meta name="description" content="Converti file DOCX (Word) in template PHP TCPDF pronti per sistemi gestionali. Genera automaticamente body, header e footer.">
+<meta name="keywords" content="docx to tcpdf, word to tcpdf, php pdf generator, tcpdf template, docx converter php">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Open Graph -->
-<meta property="og:title" content="DOCX → TCPDF Template Generator">
-<meta property="og:description" content="Converti documenti Word in template PHP per TCPDF con header, footer e placeholder automatici.">
+<meta property="og:title" content="Word → TCPDF Converter">
+<meta property="og:description" content="Trasforma documenti Word in template PHP TCPDF pronti all'uso.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://dummyimage.com/1200x630/000/fff&text=DOCX+TO+TCPDF">
-<meta property="og:url" content="https://yourusername.github.io/docx-to-tcpdf-template/">
 
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-
-<!-- Robots -->
 <meta name="robots" content="index, follow">
 
-<!-- JSON-LD Structured Data -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "DOCX to TCPDF Template Generator",
-  "applicationCategory": "DeveloperApplication",
-  "operatingSystem": "All",
-  "description": "Tool per convertire file DOCX in template PHP TCPDF pronti per sistemi gestionali.",
-  "offers": {
-    "@type": "Offer",
-    "price": "0"
-  }
+<script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<style>
+
+body {
+    font-family: Arial;
+    max-width: 1000px;
+    margin: 40px auto;
+    background: #f7f7f7;
 }
+
+h1 {
+    margin-bottom: 10px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+#preview {
+    border: 1px solid #ddd;
+    padding: 20px;
+    min-height: 200px;
+    background: white;
+}
+
+textarea {
+    width: 100%;
+    height: 300px;
+    font-family: monospace;
+}
+
+button {
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+small {
+    color: #666;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>📄 Word DOCX → TCPDF Template Generator</h1>
+
+<p>
+Converti documenti Word in template PHP pronti per <b>TCPDF</b> (header, footer e body).
+</p>
+
+<input type="file" id="file" accept=".docx">
+
+<br><br>
+
+<button onclick="convert()">Converti DOCX</button>
+
+<small>Supporta placeholder tipo {{nome}}, {{cognome}}, ecc.</small>
+
+</div>
+
+<div class="card">
+
+<h2>🔎 Preview HTML</h2>
+<div id="preview"></div>
+
+</div>
+
+<div class="card">
+
+<h2>⚙️ Template PHP TCPDF generato</h2>
+<textarea id="output"></textarea>
+
+<br><br>
+
+<button onclick="download()">Scarica file .php</button>
+
+</div>
+
+<script>
+
+let finalCode = "";
+
+async function convert() {
+
+    const file = document.getElementById("file").files[0];
+
+    if (!file) {
+        alert("Seleziona un file DOCX");
+        return;
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    const result = await mammoth.convertToHtml({ arrayBuffer });
+
+    let html = result.value;
+
+    // placeholder {{campo}} → PHP TCPDF safe
+    html = html.replace(/\{\{(.*?)\}\}/g, '".htmlspecialchars($$1)."');
+
+    document.getElementById("preview").innerHTML = html;
+
+    const header = "HEADER GENERATO DA WORD";
+    const footer = "Pagina " + '". $this->getAliasNumPage() . "/" . $this->getAliasNbPages() . "';
+
+    finalCode = `<?php
+require_once("tcpdf/tcpdf.php");
+
+class MYPDF extends TCPDF {
+
+    public function Header() {
+        $this->SetFont("helvetica", "", 10);
+        $this->writeHTML("${header}", true, false, true, false, "");
+    }
+
+    public function Footer() {
+        $this->SetY(-15);
+        $this->SetFont("helvetica", "I", 8);
+
+        $this->Cell(0, 10,
+            "Pagina " . $this->getAliasNumPage() . "/" . $this->getAliasNbPages(),
+            0, false, "C"
+        );
+    }
+}
+
+$pdf = new MYPDF();
+
+$pdf->SetMargins(15, 20, 15);
+$pdf->SetAutoPageBreak(true, 25);
+
+$pdf->AddPage();
+
+$html = \`${html.replace(/`/g, "\\`")}\`;
+
+$pdf->writeHTML($html, true, false, true, false, "");
+
+$pdf->Output();
+?>`;
+
+    document.getElementById("output").value = finalCode;
+}
+
+function download() {
+
+    const blob = new Blob([finalCode], { type: "text/php" });
+    saveAs(blob, "tcpdf_template.php");
+}
+
 </script>
 
-<link rel="stylesheet" href="style.css">
-</head>
+</body>
+</html>
