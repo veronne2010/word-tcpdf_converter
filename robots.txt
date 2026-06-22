@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://veronne2010.github.io/word-tcpdf_converter/sitemap.xml
